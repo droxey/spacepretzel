@@ -1,10 +1,10 @@
 let scene, camera, raycaster, renderer, directionalLight, lightPosition4D, cubeArray;
 let width = window.innerWidth;
 let height = window.innerHeight;
-let minSize = 50;
+let minSize = 30;
 let maxSize = 50;
 const cameraZ = 300;
-const cubeQuantity = Math.floor(width / 75);
+const cubeQuantity = Math.floor(width / 25);
 
 let spawnArea = {
   left: width / -2,
@@ -27,8 +27,8 @@ window.addEventListener('resize', function () {
   directionalLight.position.x = spawnArea.left;
   directionalLight.position.y = spawnArea.top;
 
-  lightPosition4D.x = directionalLight.position.x;
-  lightPosition4D.y = directionalLight.position.y;
+  lightPosition4D.x = spawnArea.left;
+  lightPosition4D.y = spawnArea.top;
 
   camera.left = spawnArea.left;
   camera.right = spawnArea.right;
@@ -86,12 +86,15 @@ class Cube {
       this.maxSize = args.maxSize || 10;
       this.geometry = new THREE.BoxBufferGeometry(10, 10, 10);
 
-      const cubeColor = randomColor();
-      const emissiveColor = randomColor();
+      const cubeColors = randomColor({
+        count: 2,
+        hue: 'random',
+        luminosity: 'dark'
+      });
 
       this.material = new THREE.MeshLambertMaterial({
-        color: args.color || cubeColor,
-        emissive: emissiveColor
+        color: args.color || cubeColors[0],
+        emissive: cubeColors[1]
       });
 
       this.cube = new THREE.Mesh(this.geometry, this.material);
@@ -177,10 +180,7 @@ function init() {
   renderer.domElement.id = "cubeCanvas";
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(width, height);
-
-  //Add element
   document.body.appendChild(renderer.domElement);
-
 }
 
 function animate() {
@@ -197,19 +197,19 @@ function animate() {
     if (INTERSECTED != intersects[0].object) {
       if (INTERSECTED) {
         INTERSECTED.material.color.setHex(INTERSECTED.currentHex);
-        //INTERSECTED.stayInPlace = false;
+        INTERSECTED.stayInPlace = false;
       }
       INTERSECTED = intersects[0].object;
       INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
       INTERSECTED.material.color.setHex(0x913599);
-      //INTERSECTED.stayInPlace = true;
+      INTERSECTED.stayInPlace = true;
       document.getElementById("cubeCanvas").style.cursor = "pointer";
     }
   }
   else {
     if (INTERSECTED) {
       INTERSECTED.material.color.setHex(INTERSECTED.currentHex);
-      //INTERSECTED.stayInPlace = false;
+      INTERSECTED.stayInPlace = false;
     }
     INTERSECTED = null;
     document.getElementById("cubeCanvas").style.cursor = "default";

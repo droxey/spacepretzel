@@ -8,8 +8,13 @@ body {
 }
 
 body {
-  background: url('../img/bkg.jpg') no-repeat;
+  margin: 0;
+  background: url('../img/bkg.jpg');
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   background-size: cover;
+  background-color: #0e0e0f;
 }
 
 canvas {
