@@ -1,8 +1,9 @@
 let scene, camera, raycaster, renderer, directionalLight, lightPosition4D, cubeArray;
 let width = window.innerWidth;
 let height = window.innerHeight;
-let minSize = 25;
-let maxSize = 50;
+let minSize = 5;
+let maxSize = 80;
+let maxVelocity = 3;
 const cameraZ = 300;
 const cubeQuantity = Math.floor(width / 20);
 
@@ -15,6 +16,7 @@ let spawnArea = {
   near: 0
 }
 
+// WINDOW RESIZE
 window.addEventListener('resize', function () {
   width = window.innerWidth;
   height = window.innerHeight;
@@ -39,17 +41,20 @@ window.addEventListener('resize', function () {
   renderer.setSize(width, height);
 }, false);
 
+// MOUSE CLICK
 window.addEventListener('click', function () {
   if (INTERSECTED) {
     INTERSECTED.gravity = true
   }
 }, false);
 
+// MOUSE MOVE
 document.addEventListener('mousemove', function (e) {
   e.preventDefault();
   mouse.x = (e.clientX / width) * 2 - 1;
   mouse.y = -(e.clientY / height) * 2 + 1;
 }, false);
+
 
 class Cube {
   constructor() {
@@ -57,26 +62,25 @@ class Cube {
     this.build = function (args) {
       args = args || {};
       this.size = args.size || this.getRandomIntFromRange(this.minSize, this.maxSize);
+      // Cube mesh geometric properties
       this.cube.scale.x = this.size / 10;
       this.cube.scale.y = this.size / 10;
       this.cube.scale.z = this.size / 10;
-      this.vy = args.vy || (this.getRandomIntFromRange(50, 250) / 750); //(this.getRandomIntFromRange(50, 150)/1000);
-      this.rx = args.rx || (this.getRandomIntFromRange(-100, 100) / 100000);
-      this.ry = args.ry || (this.getRandomIntFromRange(-100, 100) / 100000);
-      this.rz = args.rz || (this.getRandomIntFromRange(-100, 100) / 100000);
-      this.cube.position.x = args.posX || this.getRandomIntFromRange(spawnArea.left, spawnArea.right);
-      this.cube.position.y = args.posY || this.getRandomIntFromRange(spawnArea.bottom - (maxSize * 1.5), spawnArea.top - (maxSize * 1.5));
+      this.cube.position.x = args.posX || this.getRandomIntFromRange(spawnArea.left - maxSize, spawnArea.right + maxSize);
+      this.cube.position.y = args.posY || this.getRandomIntFromRange(spawnArea.bottom - maxSize, spawnArea.top + maxSize);
       this.cube.position.z = args.posZ || this.getRandomIntFromRange(spawnArea.far, spawnArea.near);
       this.cube.rotation.x = args.rotX || this.getRandomIntFromRange(0, 360);
       this.cube.rotation.y = args.rotY || this.getRandomIntFromRange(0, 360);
       this.cube.rotation.z = args.rotZ || this.getRandomIntFromRange(0, 360);
-      this.friction = 1 + this.size / 500;
+      // Rotational velocity
+      this.rx = args.rx || (this.getRandomIntFromRange(-100, 100) / 100000);
+      this.ry = args.ry || (this.getRandomIntFromRange(-100, 100) / 100000);
+      this.rz = args.rz || (this.getRandomIntFromRange(-100, 100) / 100000);
+      // Translational velocity
+      this.velocity = new THREE.Vector3(this.getRandomIntFromRange(-3, 3), this.getRandomIntFromRange(-3, 3), 0);
+      // Larger cubes have higher friction and move slower
+      this.friction = 1 + this.size / 50;
       this.cube.gravity = false;
-
-      // TODO: This is basic movement detection only.
-      // https://stackoverflow.com/questions/35495812/move-an-object-along-a-path-or-spline-in-threejs
-      this.direction = new THREE.Vector3(0, 1, 0);
-      this.vector = this.direction.clone().multiplyScalar(this.vy, this.vy, this.vy);
     };
 
     this.init = function (args) {
@@ -103,28 +107,44 @@ class Cube {
     };
 
     this.animate = function () {
-      // Rotation
+      // Adjust rotation by rotational velocity
       this.cube.rotation.x += this.rx;
       this.cube.rotation.y += this.ry;
       this.cube.rotation.z += this.rz;
 
+      // Randomly perturb velocity (gettin jiggy wit it) but clamp if too fast (don't get TOO jiggy)
+      this.velocity.x += (this.velocity.x < maxVelocity ? this.getRandomFloatFromRange(-0.2, 0.2) : 0);
+      this.velocity.y += (this.velocity.y < maxVelocity ? this.getRandomFloatFromRange(-0.2, 0.2) : 0);
+
       // Axis Movement
       if (this.cube.gravity) {
-        this.vector.y = (this.vector.y >= 20) ? this.vector.y : this.vector.y * this.friction;
-        this.cube.position.y -= this.vector.y;
+        // Apply velocity with friction to make larger cubes move slower
+        this.cube.position.x -= this.velocity.x * this.friction;
+        this.cube.position.y -= this.velocity.y * this.friction;
+        this.cube.position.z -= this.velocity.z * this.friction;
       } else if (!this.cube.stayInPlace) {
-        this.cube.position.y += this.vector.y;
+        this.cube.position.x += this.velocity.x;
+        this.cube.position.y += this.velocity.y;
+        this.cube.position.z += this.velocity.z;
       }
 
-      // Respawn at Bottom of window
-      if (this.cube.position.y >= spawnArea.top + (maxSize * 1.5) || this.cube.position.y < (spawnArea.bottom - maxSize)) {
-        this.build({
-          posY: spawnArea.bottom - (maxSize)
-        });
+      // If cube went out of bounds, move to opposite side of window
+      if (this.cube.position.y >= spawnArea.top + maxSize) { // top
+        this.cube.position.y = spawnArea.bottom - maxSize; // bottom
+      } else if (this.cube.position.y < spawnArea.bottom - maxSize) { // bottom
+        this.cube.position.y = spawnArea.top + maxSize; // top
+      } else if (this.cube.position.x < spawnArea.left - maxSize) { // left
+        this.cube.position.x = spawnArea.right + maxSize; // right
+      } else if (this.cube.position.x >= spawnArea.right + maxSize) { // right
+        this.cube.position.x = spawnArea.left - maxSize; // left
       }
     };
 
-    this.getRandomIntFromRange = function(min, max) {
+    this.getRandomFloatFromRange = function(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    this.getRandomIntFromRange = function (min, max) {
       return Math.floor(Math.random() * (max - min + 1) + min);
     }
   }
@@ -220,7 +240,8 @@ function animate() {
 }
 
 // Initialize mouse detection.
-let mouse = new THREE.Vector2(), INTERSECTED;
+let mouse = new THREE.Vector2();
+let INTERSECTED;
 mouse.x = 0;
 mouse.y = 0;
 
