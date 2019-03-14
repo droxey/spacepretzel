@@ -1,10 +1,10 @@
 let scene, camera, raycaster, renderer, directionalLight, lightPosition4D, cubeArray;
 let width = window.innerWidth;
 let height = window.innerHeight;
-let minSize = 30;
+let minSize = 25;
 let maxSize = 50;
 const cameraZ = 300;
-const cubeQuantity = Math.floor(width / 25);
+const cubeQuantity = Math.floor(width / 20);
 
 let spawnArea = {
   left: width / -2,
@@ -47,7 +47,6 @@ window.addEventListener('click', function () {
 
 document.addEventListener('mousemove', function (e) {
   e.preventDefault();
-
   mouse.x = (e.clientX / width) * 2 - 1;
   mouse.y = -(e.clientY / height) * 2 + 1;
 }, false);
@@ -71,7 +70,7 @@ class Cube {
       this.cube.rotation.x = args.rotX || this.getRandomIntFromRange(0, 360);
       this.cube.rotation.y = args.rotY || this.getRandomIntFromRange(0, 360);
       this.cube.rotation.z = args.rotZ || this.getRandomIntFromRange(0, 360);
-      this.friction = 1 + this.size / 1000;
+      this.friction = 1 + this.size / 500;
       this.cube.gravity = false;
 
       // TODO: This is basic movement detection only.
@@ -145,7 +144,7 @@ function init() {
   }
 
   // Add ambient and directional light to the scene.
-  let ambientLight = new THREE.AmbientLight('#ffffff', 0.2);
+  let ambientLight = new THREE.AmbientLight('#ffffff', 0.3);
   scene.add(ambientLight);
 
   directionalLight = new THREE.DirectionalLight('#ffffff', 1);
