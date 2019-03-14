@@ -3,7 +3,7 @@ let width = window.innerWidth;
 let height = window.innerHeight;
 let minSize = 5;
 let maxSize = 80;
-let maxVelocity = 3;
+let maxVelocity = 2;
 const cameraZ = 300;
 const cubeQuantity = Math.floor(width / 20);
 
