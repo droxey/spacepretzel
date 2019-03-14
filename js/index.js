@@ -3,9 +3,9 @@ let width = window.innerWidth;
 let height = window.innerHeight;
 let minSize = 5;
 let maxSize = 80;
-let maxVelocity = 2;
+let maxVelocity = 1;
 const cameraZ = 300;
-const cubeQuantity = Math.floor(width / 20);
+const cubeQuantity = Math.floor(width / 15);
 
 let spawnArea = {
   left: width / -2,
@@ -45,6 +45,7 @@ window.addEventListener('resize', function () {
 window.addEventListener('click', function () {
   if (INTERSECTED) {
     INTERSECTED.gravity = true
+    INTERSECTED.reroll();
   }
 }, false);
 
@@ -73,9 +74,9 @@ class Cube {
       this.cube.rotation.y = args.rotY || this.getRandomIntFromRange(0, 360);
       this.cube.rotation.z = args.rotZ || this.getRandomIntFromRange(0, 360);
       // Rotational velocity
-      this.rx = args.rx || (this.getRandomIntFromRange(-100, 100) / 100000);
-      this.ry = args.ry || (this.getRandomIntFromRange(-100, 100) / 100000);
-      this.rz = args.rz || (this.getRandomIntFromRange(-100, 100) / 100000);
+      this.rx = args.rx || (this.getRandomIntFromRange(-100, 100) / 5000);
+      this.ry = args.ry || (this.getRandomIntFromRange(-100, 100) / 5000);
+      this.rz = args.rz || (this.getRandomIntFromRange(-100, 100) / 5000);
       // Translational velocity
       this.velocity = new THREE.Vector3(this.getRandomIntFromRange(-3, 3), this.getRandomIntFromRange(-3, 3), 0);
       // Larger cubes have higher friction and move slower
@@ -87,7 +88,32 @@ class Cube {
       args = args || {};
       this.minSize = args.minSize || 10;
       this.maxSize = args.maxSize || 10;
-      this.geometry = new THREE.BoxBufferGeometry(10, 10, 10);
+      let scale = 0.2; // maxSize / 8;
+      // this.geometry = new THREE.BoxBufferGeometry(10, 10, 10);
+      // this.geometry = new THREE.IcosahedronBufferGeometry(maxSize / 8, 1); // radius, ?
+      // this.geometry = createShapeGeometry(6, maxSize / 2); // n, circumradius
+
+      // Next 12 geometries from https://threejs.org/examples/#webgl_geometries
+      this.geometries = [];
+      this.geometries.push(new THREE.SphereBufferGeometry(75 * scale / 2, 20, 10));
+      // this.geometries.push(new THREE.IcosahedronBufferGeometry(75 * scale/2, 1));
+      // this.geometries.push(new THREE.OctahedronBufferGeometry(75 * scale/2, 2));
+      this.geometries.push(new THREE.TetrahedronBufferGeometry(75 * scale, 0));
+      // this.geometries.push(new THREE.PlaneBufferGeometry(100 * scale, 100 * scale, 4, 4));
+      this.geometries.push(new THREE.BoxBufferGeometry(100 * scale / 2, 100 * scale / 2, 100 * scale / 2, 4, 4, 4));
+      // this.geometries.push(new THREE.CircleBufferGeometry(50 * scale, 20, 0, Math.PI * 2));
+      this.geometries.push(new THREE.RingBufferGeometry(10 * scale, 50 * scale, 20, 5, 0, Math.PI * 2));
+      this.geometries.push(new THREE.CylinderBufferGeometry(20 * scale, 20 * scale, 80 * scale, 40, 5));
+      var points = [];
+      for (var i = 0; i < 50; i++) {
+        points.push(new THREE.Vector2(Math.sin(i * 0.2) * Math.sin(i * 0.1) * 15 * scale + 50 * scale, (i - 5) * 2));
+      }
+      // this.geometries.push(new THREE.LatheBufferGeometry(points, 20));
+      this.geometries.push(new THREE.TorusBufferGeometry(40 * scale, 15 * scale, 20, 20));
+      this.geometries.push(new THREE.TorusKnotBufferGeometry(50 * scale, 10 * scale, 50, 20));
+
+      let pick = this.getRandomIntFromRange(1, this.geometries.length);
+      this.geometry = this.geometries[pick-1];
 
       const cubeColors = randomColor({
         count: 2,
@@ -106,7 +132,15 @@ class Cube {
       scene.add(this.cube);
     };
 
+    this.reroll = function () {
+      // Mulligan the shape (reroll geometry)
+      let pick = this.getRandomIntFromRange(1, this.geometries.length);
+      this.geometry = this.geometries[pick - 1];
+    };
+
     this.animate = function () {
+      // this.reroll();
+
       // Adjust rotation by rotational velocity
       this.cube.rotation.x += this.rx;
       this.cube.rotation.y += this.ry;
@@ -150,6 +184,35 @@ class Cube {
   }
 }
 
+// Create a new shape for a regular n-gon-ahedron
+// Source: https://stackoverflow.com/questions/18514423/generating-a-regular-polygon-with-three-js
+function createShapeGeometry(n, circumradius) {
+
+  var shape = new THREE.Shape(),
+    vertices = [],
+    x;
+
+  // Calculate the vertices of the n-gon.
+  for (x = 1; x <= sides; x++) {
+    vertices.push([
+      circumradius * Math.sin((Math.PI / n) + (x * ((2 * Math.PI) / n))),
+      circumradius * Math.cos((Math.PI / n) + (x * ((2 * Math.PI) / n)))
+    ]);
+  }
+
+  // Start at the last vertex.
+  shape.moveTo.apply(shape, vertices[sides - 1]);
+
+  // Connect each vertex to the next in sequential order.
+  for (x = 0; x < n; x++) {
+    shape.lineTo.apply(shape, vertices[x]);
+  }
+
+  // It's shape and bake... and I helped!
+  return new THREE.ShapeGeometry(shape);
+}
+
+// INITIALIZE SCENE
 function init() {
   scene = new THREE.Scene();
   cubeArray = [];
@@ -202,6 +265,7 @@ function init() {
   document.body.appendChild(renderer.domElement);
 }
 
+// ANIMATE SCENE
 function animate() {
   // Animate the cubes.
   for (let i = 0; i < cubeArray.length; i++) {
