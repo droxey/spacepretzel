@@ -1,0 +1,27 @@
+html {
+  background-color: #0e0e0f;
+}
+
+html,
+body {
+  overflow: hidden;
+}
+
+canvas {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+}
+
+@keyframes reveal {
+
+  0%,
+  90% {
+    bottom: -30px;
+  }
+
+  100% {
+    bottom: 15px;
+  }
+}
