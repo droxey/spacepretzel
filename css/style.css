@@ -7,6 +7,11 @@ body {
   overflow: hidden;
 }
 
+body {
+  background: url('../img/bkg.jpg') no-repeat;
+  background-size: cover;
+}
+
 canvas {
   height: 100%;
   width: 100%;
