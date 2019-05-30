@@ -1,4 +1,4 @@
 # spacepretzel
 
-An interactive Three.js based visualization!
+🥨Interactive Three.js visualization in 3D Rainbowspace.
 
